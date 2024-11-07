@@ -228,6 +228,8 @@ Here are code snippets for some common installation methods (use only one):
     permanent_delete = true,
     -- Whether to use for editing directories
     use_as_default_explorer = true,
+    -- Whether to open file with go_in command
+    go_in_folder_only = false,
   },
 
   -- Customization of explorer windows

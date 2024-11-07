@@ -685,6 +685,8 @@ MiniFiles.config = {
     permanent_delete = true,
     -- Whether to use for editing directories
     use_as_default_explorer = true,
+    -- Whether to open file with go_in command
+    go_in_folder_only = false,
   },
 
   -- Customization of explorer windows
@@ -916,7 +918,8 @@ MiniFiles.go_in = function(opts)
   end
 
   local cur_line = vim.fn.line('.')
-  explorer = H.explorer_go_in_range(explorer, vim.api.nvim_get_current_buf(), cur_line, cur_line)
+  local should_open_file = (not MiniFiles.config.options.go_in_folder_only) or should_close
+  explorer = H.explorer_go_in_range(explorer, vim.api.nvim_get_current_buf(), cur_line, cur_line, should_open_file)
 
   H.explorer_refresh(explorer)
 
@@ -1294,6 +1297,7 @@ H.setup_config = function(config)
     ['mappings.trim_right'] = { config.mappings.trim_right, 'string' },
 
     ['options.use_as_default_explorer'] = { config.options.use_as_default_explorer, 'boolean' },
+    ['options.go_in_folder_only'] = { config.options.go_in_folder_only, 'boolean' },
     ['options.permanent_delete'] = { config.options.permanent_delete, 'boolean' },
 
     ['windows.max_number'] = { config.windows.max_number, 'number' },
@@ -1595,7 +1599,7 @@ H.explorer_sync_cursor_and_branch = function(explorer, depth)
   return explorer
 end
 
-H.explorer_go_in_range = function(explorer, buf_id, from_line, to_line)
+H.explorer_go_in_range = function(explorer, buf_id, from_line, to_line, open_leaf)
   -- Compute which entries to go in: all files and only last directory
   local files, path, line = {}, nil, nil
   for i = from_line, to_line do
@@ -1616,8 +1620,10 @@ H.explorer_go_in_range = function(explorer, buf_id, from_line, to_line)
     end
   end
 
-  for _, file_path in ipairs(files) do
-    explorer = H.explorer_open_file(explorer, file_path)
+  if open_leaf then
+    for _, file_path in ipairs(files) do
+      explorer = H.explorer_open_file(explorer, file_path)
+    end
   end
 
   if path ~= nil then
@@ -2164,7 +2170,7 @@ H.buffer_make_mappings = function(buf_id, mappings)
     local from_line, to_line = math.min(line_1, line_2), math.max(line_1, line_2)
     vim.schedule(function()
       local explorer = H.explorer_get()
-      explorer = H.explorer_go_in_range(explorer, buf_id, from_line, to_line)
+      explorer = H.explorer_go_in_range(explorer, buf_id, from_line, to_line, true)
       H.explorer_refresh(explorer)
     end)
 
